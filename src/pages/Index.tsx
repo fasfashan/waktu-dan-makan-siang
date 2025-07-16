@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,12 @@ const Index = () => {
     }
     
     const diffMs = checkOutDate.getTime() - checkInDate.getTime();
-    return diffMs / (1000 * 60 * 60); // Convert to hours
+    const grossHours = diffMs / (1000 * 60 * 60); // Convert to hours
+    
+    // Subtract 1 hour break time
+    const netHours = grossHours - 1;
+    
+    return Math.max(0, netHours); // Ensure no negative hours
   };
 
   const calculateMealAllowance = (checkIn: string, workHours: number): number => {
@@ -181,6 +185,9 @@ const Index = () => {
                   onChange={(e) => setCheckOutTime(e.target.value)}
                 />
               </div>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              * Jam kerja sudah dikurangi 1 jam istirahat
             </div>
             <Button onClick={handleSubmit} className="w-full">
               Simpan Absensi
