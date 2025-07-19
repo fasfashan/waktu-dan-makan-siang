@@ -22,7 +22,6 @@ const Index = () => {
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [isManualMode, setIsManualMode] = useState(false);
   const { toast } = useToast();
 
   // Load data from localStorage on component mount
@@ -147,12 +146,63 @@ const Index = () => {
   };
 
   const handleTapOut = () => {
+    if (!checkInTime) {
+      toast({
+        title: "Error",
+        description: "Mohon tap in terlebih dahulu",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const currentTime = format(new Date(), 'HH:mm');
     setCheckOutTime(currentTime);
+    
+    // Auto save after setting checkout time
+    const workHours = calculateWorkHours(checkInTime, currentTime);
+    const mealAllowance = calculateMealAllowance(checkInTime, workHours);
+    const isWarning = workHours < 8;
+    
+    const newRecord: AttendanceRecord = {
+      date: format(new Date(), 'yyyy-MM-dd'),
+      checkIn: checkInTime,
+      checkOut: currentTime,
+      workHours: Math.round(workHours * 100) / 100,
+      mealAllowance,
+      isWarning
+    };
+
+    // Check if record for today already exists
+    const existingIndex = records.findIndex(r => r.date === newRecord.date);
+    
+    if (existingIndex >= 0) {
+      const updatedRecords = [...records];
+      updatedRecords[existingIndex] = newRecord;
+      setRecords(updatedRecords);
+    } else {
+      setRecords([newRecord, ...records]);
+    }
+
+    // Show success toast
     toast({
-      title: "Tap Out Berhasil", 
-      description: `Jam pulang: ${currentTime}`
+      title: "Tap Out Berhasil",
+      description: `Jam pulang: ${currentTime} | Jam kerja: ${workHours.toFixed(2)} jam`,
     });
+
+    // Show warning if work hours < 8
+    if (isWarning) {
+      toast({
+        title: "Peringatan!",
+        description: `Jam kerja kurang dari 8 jam. Tidak mendapat uang makan.`,
+        variant: "destructive"
+      });
+    }
+
+    // Clear form for next day
+    setTimeout(() => {
+      setCheckInTime('');
+      setCheckOutTime('');
+    }, 2000);
   };
 
   const formatCurrency = (amount: number): string => {
@@ -204,47 +254,9 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Toggle Manual Mode */}
-            <div className="flex items-center justify-center">
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={() => setIsManualMode(!isManualMode)}
-              >
-                {isManualMode ? "Kembali ke Tap Mode" : "Input Manual"}
-              </Button>
-            </div>
-
-            {/* Manual Input (hidden by default) */}
-            {isManualMode && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="checkin">Jam Datang</Label>
-                  <Input
-                    id="checkin"
-                    type="time"
-                    value={checkInTime}
-                    onChange={(e) => setCheckInTime(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="checkout">Jam Pulang</Label>
-                  <Input
-                    id="checkout"
-                    type="time"
-                    value={checkOutTime}
-                    onChange={(e) => setCheckOutTime(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="text-sm text-muted-foreground">
               * Jam kerja sudah dikurangi 1 jam istirahat
             </div>
-            <Button onClick={handleSubmit} className="w-full">
-              Simpan Absensi
-            </Button>
           </CardContent>
         </Card>
 
