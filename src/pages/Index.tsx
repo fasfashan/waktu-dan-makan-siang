@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Clock, DollarSign, Calendar, AlertTriangle } from 'lucide-react';
@@ -67,73 +65,6 @@ const Index = () => {
     
     // If check in late (>08:30) but work >=8 hours, reduced allowance
     return 30000;
-  };
-
-  const handleSubmit = () => {
-    if (!checkInTime || !checkOutTime) {
-      toast({
-        title: "Error",
-        description: "Mohon isi jam datang dan pulang",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const workHours = calculateWorkHours(checkInTime, checkOutTime);
-    const mealAllowance = calculateMealAllowance(checkInTime, workHours);
-    const isWarning = workHours < 8;
-    
-    const newRecord: AttendanceRecord = {
-      date: format(new Date(), 'yyyy-MM-dd'),
-      checkIn: checkInTime,
-      checkOut: checkOutTime,
-      workHours: Math.round(workHours * 100) / 100, // Round to 2 decimal places
-      mealAllowance,
-      isWarning
-    };
-
-    // Check if record for today already exists
-    const existingIndex = records.findIndex(r => r.date === newRecord.date);
-    
-    if (existingIndex >= 0) {
-      // Update existing record
-      const updatedRecords = [...records];
-      updatedRecords[existingIndex] = newRecord;
-      setRecords(updatedRecords);
-      toast({
-        title: "Berhasil",
-        description: "Data absensi hari ini telah diperbarui"
-      });
-    } else {
-      // Add new record
-      setRecords([newRecord, ...records]);
-      toast({
-        title: "Berhasil",
-        description: "Data absensi berhasil disimpan"
-      });
-    }
-
-    // Show warning if work hours < 8
-    if (isWarning) {
-      toast({
-        title: "Peringatan!",
-        description: `Jam kerja kurang dari 8 jam (${workHours.toFixed(2)} jam). Tidak mendapat uang makan.`,
-        variant: "destructive"
-      });
-    }
-
-    // Clear form
-    setCheckInTime('');
-    setCheckOutTime('');
-  };
-
-  const getTotalMealAllowance = (): number => {
-    return records.reduce((total, record) => total + record.mealAllowance, 0);
-  };
-
-  const getCurrentMonthRecords = (): AttendanceRecord[] => {
-    const currentMonth = format(new Date(), 'yyyy-MM');
-    return records.filter(record => record.date.startsWith(currentMonth));
   };
 
   const handleTapIn = () => {
@@ -203,6 +134,15 @@ const Index = () => {
       setCheckInTime('');
       setCheckOutTime('');
     }, 2000);
+  };
+
+  const getTotalMealAllowance = (): number => {
+    return records.reduce((total, record) => total + record.mealAllowance, 0);
+  };
+
+  const getCurrentMonthRecords = (): AttendanceRecord[] => {
+    const currentMonth = format(new Date(), 'yyyy-MM');
+    return records.filter(record => record.date.startsWith(currentMonth));
   };
 
   const formatCurrency = (amount: number): string => {
