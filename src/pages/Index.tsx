@@ -20,6 +20,7 @@ const Index = () => {
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [todayTapInData, setTodayTapInData] = useState<{date: string, checkIn: string} | null>(null);
   const { toast } = useToast();
 
   // Load data from localStorage on component mount
@@ -27,6 +28,15 @@ const Index = () => {
     const savedRecords = localStorage.getItem('attendanceRecords');
     if (savedRecords) {
       setRecords(JSON.parse(savedRecords));
+    }
+
+    // Load today's tap in data if exists
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const savedTapIn = localStorage.getItem(`tapIn_${today}`);
+    if (savedTapIn) {
+      const tapInData = JSON.parse(savedTapIn);
+      setTodayTapInData(tapInData);
+      setCheckInTime(tapInData.checkIn);
     }
   }, []);
 
@@ -68,8 +78,26 @@ const Index = () => {
   };
 
   const handleTapIn = () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const currentTime = format(new Date(), 'HH:mm');
+    
+    // Check if already tapped in today
+    if (todayTapInData && todayTapInData.date === today) {
+      toast({
+        title: "Sudah Tap In",
+        description: `Anda sudah tap in hari ini pada jam ${todayTapInData.checkIn}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Save tap in data to localStorage
+    const tapInData = { date: today, checkIn: currentTime };
+    localStorage.setItem(`tapIn_${today}`, JSON.stringify(tapInData));
+    
     setCheckInTime(currentTime);
+    setTodayTapInData(tapInData);
+    
     toast({
       title: "Tap In Berhasil",
       description: `Jam datang: ${currentTime}`
@@ -129,7 +157,11 @@ const Index = () => {
       });
     }
 
-    // Clear form for next day
+    // Clear temporary tap in data and form
+    const today = format(new Date(), 'yyyy-MM-dd');
+    localStorage.removeItem(`tapIn_${today}`);
+    setTodayTapInData(null);
+    
     setTimeout(() => {
       setCheckInTime('');
       setCheckOutTime('');
