@@ -22,6 +22,7 @@ const Index = () => {
   const [checkInTime, setCheckInTime] = useState('');
   const [checkOutTime, setCheckOutTime] = useState('');
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
+  const [isManualMode, setIsManualMode] = useState(false);
   const { toast } = useToast();
 
   // Load data from localStorage on component mount
@@ -136,6 +137,24 @@ const Index = () => {
     return records.filter(record => record.date.startsWith(currentMonth));
   };
 
+  const handleTapIn = () => {
+    const currentTime = format(new Date(), 'HH:mm');
+    setCheckInTime(currentTime);
+    toast({
+      title: "Tap In Berhasil",
+      description: `Jam datang: ${currentTime}`
+    });
+  };
+
+  const handleTapOut = () => {
+    const currentTime = format(new Date(), 'HH:mm');
+    setCheckOutTime(currentTime);
+    toast({
+      title: "Tap Out Berhasil", 
+      description: `Jam pulang: ${currentTime}`
+    });
+  };
+
   const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -166,26 +185,60 @@ const Index = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="checkin">Jam Datang</Label>
-                <Input
-                  id="checkin"
-                  type="time"
-                  value={checkInTime}
-                  onChange={(e) => setCheckInTime(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkout">Jam Pulang</Label>
-                <Input
-                  id="checkout"
-                  type="time"
-                  value={checkOutTime}
-                  onChange={(e) => setCheckOutTime(e.target.value)}
-                />
-              </div>
+            {/* Tap In/Out Buttons */}
+            <div className="grid grid-cols-2 gap-4">
+              <Button 
+                onClick={handleTapIn}
+                variant={checkInTime ? "secondary" : "default"}
+                className="w-full h-16 text-lg"
+              >
+                {checkInTime ? `✓ Tap In: ${checkInTime}` : "🟢 TAP IN"}
+              </Button>
+              <Button 
+                onClick={handleTapOut}
+                variant={checkOutTime ? "secondary" : "outline"}
+                className="w-full h-16 text-lg"
+                disabled={!checkInTime}
+              >
+                {checkOutTime ? `✓ Tap Out: ${checkOutTime}` : "🔴 TAP OUT"}
+              </Button>
             </div>
+
+            {/* Toggle Manual Mode */}
+            <div className="flex items-center justify-center">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setIsManualMode(!isManualMode)}
+              >
+                {isManualMode ? "Kembali ke Tap Mode" : "Input Manual"}
+              </Button>
+            </div>
+
+            {/* Manual Input (hidden by default) */}
+            {isManualMode && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="checkin">Jam Datang</Label>
+                  <Input
+                    id="checkin"
+                    type="time"
+                    value={checkInTime}
+                    onChange={(e) => setCheckInTime(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="checkout">Jam Pulang</Label>
+                  <Input
+                    id="checkout"
+                    type="time"
+                    value={checkOutTime}
+                    onChange={(e) => setCheckOutTime(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="text-sm text-muted-foreground">
               * Jam kerja sudah dikurangi 1 jam istirahat
             </div>
